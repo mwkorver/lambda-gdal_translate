@@ -1,7 +1,7 @@
 This is based on Hector Castro's [lambda-gdal](https://github.com/hectcastro/lambda-gdalinfo)
 # lambda-gdal_translate
 
-This project allows you to run `gdal_translate` using the [Amazom Lambda](https://aws.amazon.com/lambda/) execution environment.
+This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) using the [Amazon Lambda](https://aws.amazon.com/lambda/) execution environment.
 
 ## Usage
 
