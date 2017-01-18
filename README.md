@@ -7,7 +7,7 @@ Generally it allows you run something that looks like this:
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-without much more than configuring the AWS Lambda function's memory and timeout settings.
+without much more than configuring the AWS Lambda function's memory and timeout settings. It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct /50pct.
 
 ## Usage
 
@@ -36,7 +36,7 @@ cat geotifs | awk -F"/" '{print "lambda invoke --function-name gdal_translate --
 
 ## Updating your own Amazon Lambda function
 
-Make whatever changes are necessary to `index.js` and then package everything into a ZIP file:
+Make the changes you want to the file `index.js` and then package everything into a ZIP file:
 
 ```bash
 $ zip -r -9 lambda-gdal_translate bin index.js
@@ -55,9 +55,9 @@ Then test it by using something like the single object example listed above.
 
 ## Statically Linked `gdal_translate`
 
-In order for Lambda to be able to run the gdal_translate binary you need build a statically link one on an Amazon Linux instance.
+You should be able to use the gdal_translate binary under /bin. However if you want a more recent version you need build a statically linked one on an Amazon Linux instance.
 
-First, spin up an Amazon Linux instance on Amazon EC2 and execute the following commands:
+First, spin up an Amazon Linux instance on Amazon EC2 and run the following commands:
 
 ```bash
 $ sudo yum update -y
@@ -71,14 +71,16 @@ $ make
 $ make install
 ```
 
-Next, download the `gdal_translate` binary from the machine. I typically use AWS S3 CLI to move files around between machines.
+Next, get a copy of the `gdal_translate` binary to your /bin directory. It is easiest to do this on the same EC2 instance you are testing the AWS Lambda function.
 
 ## Test
 
-Once you have uploaded the zip file, which includes the gdal_translate binary, you can run a test either via CLI, or from the console. As in the example command line above, in order to run it from the console, you will need to provide the function a json formatted test event.
+Once you have updated the Lambda function by uploading the zip file, which includes the gdal_translate binary, you can run a test either via CLI, or from the console. As in the example command line above, in order to run test it, you will need to provide the function a json formatted test event.
 
-```
+```bash
 {"srcBucket": "korver.us.east.1","srcKey": "naip/or/2014/1m/rgbir/43124/m_4312447_se_10_1_20140604.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "test/", "subSample": "50%", "compRate": "85"}
-...
+```
+
+Success should result in a new compressed jpeg file located in your target bucket and under you target prefix.
 
 
