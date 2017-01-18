@@ -1,7 +1,13 @@
 This is based on Hector Castro's [lambda-gdal](https://github.com/hectcastro/lambda-gdalinfo)
 # lambda-gdal_translate
 
-This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) using the [Amazon Lambda](https://aws.amazon.com/lambda/) execution environment.
+This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
+Generally it allows you run something that looks like this:
+
+```bash
+gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
+```
+without much more than configuring the AWS Lambda function's memory and timeout settings.
 
 ## Usage
 
@@ -75,4 +81,4 @@ Once you have uploaded the zip file, which includes the gdal_translate binary, y
 {"srcBucket": "korver.us.east.1","srcKey": "naip/or/2014/1m/rgbir/43124/m_4312447_se_10_1_20140604.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "test/", "subSample": "50%", "compRate": "85"}
 ...
 
-```
+
