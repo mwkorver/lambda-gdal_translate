@@ -1,24 +1,22 @@
-# lambda-gdalinfo
+# lambda-gdal_translate
 
-This project is a proof-of-concept for executing `gdalinfo` inside of the [Amazom Lambda](https://aws.amazon.com/lambda/) execution environment.
+This project allows you to run `gdal_translate` using the [Amazom Lambda](https://aws.amazon.com/lambda/) execution environment.
 
 ## Usage
 
 Make whatever changes are necessary to `index.js` and then package everything into a ZIP file:
 
 ```bash
-$ zip -r -9 lambda-gdalinfo bin index.js
+$ zip -r -9 lambda-gdal_translate bin index.js
 updating: bin/ (stored 0%)
-updating: bin/gdalinfo (deflated 69%)
-updating: index.js (deflated 32%)
+updating: bin/gdal_translate (deflated 69%)
+updating: index.js (deflated 61%)
 ```
 
 From there you can upload the resulting ZIP file to Amazon Lambda via the console, or CLI:
 
 ```bash
-$ aws lambda update-function-code \
-    --function-name HelloLambda
-    --zip-file fileb://lambda-gdalinfo.zip
+$ aws lambda update-function-code --function-name gdal_translate --zip-file fileb://lambda-gdal_translate.zip
 ```
 
 ## Statically Linked `gdalinfo`
