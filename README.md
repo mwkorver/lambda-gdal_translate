@@ -63,12 +63,13 @@ First, spin up an Amazon Linux instance on Amazon EC2 and run the following comm
 $ sudo yum update -y
 $ sudo yum groupinstall -y "Development Tools"
 $ sudo yum install -y libcurl-devel
-$ wget http://download.osgeo.org/gdal/1.11.2/gdal-1.11.2.tar.gz
-$ tar xzf gdal-1.11.2.tar.gz
-$ cd gdal-1.11.2
-$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --prefix /tmp
+$ wget http://download.osgeo.org/gdal/2.2.0/gdal-2.2.0.tar.gz
+$ tar xzf gdal-2.2.0.tar.gz
+$ cd gdal-2.2.0
+$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --prefix /tmp/gdal
 $ make
 $ make install
+$ rm -rf /tmp/gdal
 ```
 
 Next, get a copy of the `gdal_translate` binary to your /bin directory. It is easiest to do this on the same EC2 instance you are testing the AWS Lambda function.
