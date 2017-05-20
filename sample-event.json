@@ -1,10 +1,6 @@
-{
-  "srcBucket": "korver.us.east.1",
-  "srcKey": "m_4111701_ne_11_1_20140920.tif",
-  "targetBucket": "korver.us.east.1",
-  "targetPrefix": "test-current/",
-  "subSample": "100%",
-  "compRate": "85"
+{ 
+"sourceBucket": "aws-naip", 
+"sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", 
+"targetBucket": "korver.us.east.1", 
+"targetPrefix": "temp-000"
 }
-
-
