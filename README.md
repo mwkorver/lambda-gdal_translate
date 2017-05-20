@@ -18,9 +18,9 @@ An example command looks like the following:
 aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "temp-000"}' log
 ```
 
-As you can see in the above example, there are no gdal_translate arguments. That is because the arguments are provided as environment variables. It reads json that contains source bucke and object key, target bucket and prefix. In addition, as environment variables you can define a find/replace strings that you can use to modify the output key name of your new image.
+As you can see in the above example, there are no gdal_translate arguments in the Lambda function invocation. That is because those values typically remain static over a batch operation so are provided to the code as environment variables. Command line invocation simply requires source bucket and object key, target bucket and optional prefix. Because you often want to modify the resulting image objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a group of files you would build above example command by catting an existing list of target files.
+In order to process a group of files you would build the above example command by cating an existing list of target files.
 Assuming you have list of S3 object keys that look like this:
 
 ```bash
