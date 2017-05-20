@@ -3,22 +3,22 @@ This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro
 # lambda-gdal_translate
 
 This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
-Generally it allows you run something that looks like this:
+Generally it allows you run something that you would traditionally run part of batch file like this:
 
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-without much more than configuring the AWS Lambda function's memory and timeout settings. It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct and /rgb/50pct. You can read more about the USDA's NAIP data, part of the AWS Earth on AWS collection [here] (https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct and /rgb/50pct. You can read more about the USDA's NAIP data, part of the AWS Earth on AWS collection [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Usage
 
 An example command looks like the following:
 
 ```bash
-aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"srcBucket": "korver.us.east.1","srcKey": "naip/or/2014/1m/rgbir/43124/m_4312447_se_10_1_20140604.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "test/", "subSample": "50%", "compRate": "85"}' log
+aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "temp-000"}' log
 ```
 
-The code supports just a small subset of gdal_translate's feature set. It reads json that contains source bucket, object key, output bucket, output prefix, subsample rate, and compression rate to produce a internally tiled, jpeg comressed geotiff file.
+As you can see in the above example, there are no gdal_translate arguments. That is because the arguments are provided as environment variables. It reads json that contains source bucke and object key, target bucket and prefix. In addition, as environment variables you can define a find/replace strings that you can use to modify the output key name of your new image.
 
 In order to process a group of files you would build above example command by catting an existing list of target files.
 Assuming you have list of S3 object keys that look like this:
