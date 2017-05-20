@@ -3,7 +3,7 @@ This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro
 # lambda-gdal_translate
 
 This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
-Generally it allows you run something that you would traditionally run as part of batch file like this:
+Generally it allows you run something that you would traditionally run as part of a batch file like this:
 
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
