@@ -10,7 +10,7 @@ exports.handler = function(event, context, callback) {
     console.log('Object Key: ' + event.sourceObjectKey);
     console.log('Bucket Name: ' + event.targetBucket);
     console.log('target prefix: ' + event.targetPrefix);
-    console.log('find: ' + process.env.findVal);
+    //console.log('find: ' + process.env.findVal);
     console.log('replace: ' + process.env.replaceVal);
     var inputStream = fs.createWriteStream('/tmp/input.tif');
     s3.getObject({Bucket: event.sourceBucket, Key: event.sourceObjectKey, RequestPayer: 'requester'})
