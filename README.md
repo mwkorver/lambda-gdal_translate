@@ -8,7 +8,7 @@ Generally it allows you run something that you would traditionally run as part o
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct and /rgb/50pct. You can read more about the USDA's NAIP data, part of the AWS Earth on AWS collection [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. What makes this possible at scale is that your are working with data in [Amazon S3](https://aws.amazon.com/s3). It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct and /rgb/50pct. You can read more about the USDA's NAIP data, part of the AWS Earth on AWS collection [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Usage
 
