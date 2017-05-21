@@ -1,4 +1,5 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) 
+
 If you are new to AWS Lambda a good place to start is [here](
 http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
 
@@ -10,7 +11,7 @@ Generally it allows you run something that you would traditionally run as part o
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. What makes this possible at scale is that your are working with data in [Amazon S3](https://aws.amazon.com/s3). You can read more about the USDA's NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
+From AWS Lambda, you can do the same, but in a highly parallel way, without much more than configuring the Lambda function's memory and timeout settings. What makes this possible at scale is that you are working with data in [Amazon S3](https://aws.amazon.com/s3), rather than a traditional file system. This example uses USDA's NAIP data. You can read more about the NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Usage
 
@@ -22,12 +23,11 @@ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation
 
 As you can see in the above example, there are no gdal_translate arguments in the Lambda function invocation. That is because those values typically remain static over a batch operation so are provided to the script as environment variables. Because you often want to modify the resulting objects key name before you store it back to S3, you can also define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a large group of files in S3 it make sense to work off of a file list rather than repetitively list objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS CLI and awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked [requester-pays](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html).
+In order to process a large group of files in S3 it make sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS CLI and awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked [requester-pays](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html).
 
 ```bash
 aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
 ```
-
 Your list should look something like this:
 
 ```bash
