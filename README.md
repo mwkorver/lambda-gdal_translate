@@ -13,6 +13,25 @@ gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCK
 ```
 But from AWS Lambda. The difference you can do so in a highly parallel way, without much more than configuring the Lambda function's memory and timeout settings. What makes this possible at scale is that you are working with data in [Amazon S3](https://aws.amazon.com/s3), rather than a traditional file system. This example uses the USDA's NAIP data set. You can read more about the NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
+## Statically Linked `gdal_translate`
+
+You should be able to use the gdal_translate binary under /bin. However if you want a more recent version you need build a statically linked one on an Amazon Linux instance for it run on AWS Lambda.
+
+First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  SSH to the instance and run the following commands:
+
+```bash
+$ sudo yum update -y
+$ sudo yum groupinstall -y "Development Tools"
+$ sudo yum install -y libcurl-devel
+$ wget http://download.osgeo.org/gdal/2.2.0/gdal-2.2.0.tar.gz
+$ tar xzf gdal-2.2.0.tar.gz
+$ cd gdal-2.2.0
+$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --prefix /tmp/gdal
+$ make
+$ make install
+$ rm -rf /tmp/gdal
+```
+
 ## Usage
 
 Runnig Lambda-gdal_translate looks like this:
@@ -85,25 +104,6 @@ $ aws lambda update-function-code --function-name gdal_translate --zip-file file
 
 Then test it by using something like the single object example listed above.
 
-## Statically Linked `gdal_translate`
-
-You should be able to use the gdal_translate binary under /bin. However if you want a more recent version you need build a statically linked one on an Amazon Linux instance.
-
-First, spin up an Amazon Linux instance on Amazon EC2 and run the following commands:
-
-```bash
-$ sudo yum update -y
-$ sudo yum groupinstall -y "Development Tools"
-$ sudo yum install -y libcurl-devel
-$ wget http://download.osgeo.org/gdal/2.2.0/gdal-2.2.0.tar.gz
-$ tar xzf gdal-2.2.0.tar.gz
-$ cd gdal-2.2.0
-$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --prefix /tmp/gdal
-$ make
-$ make install
-$ rm -rf /tmp/gdal
-```
-
 Next, get a copy of the `gdal_translate` binary to your /bin directory. It is easiest to do this on the same EC2 instance you are testing the AWS Lambda function.
 
 ## Test
@@ -111,7 +111,12 @@ Next, get a copy of the `gdal_translate` binary to your /bin directory. It is ea
 Once you have updated the Lambda function by uploading the zip file, which includes the gdal_translate binary, you can run a test either via CLI, or from the console. As in the example command line above, in order to run test it, you will need to provide the function a json formatted test event.
 
 ```bash
-{"srcBucket": "korver.us.east.1","srcKey": "naip/or/2014/1m/rgbir/43124/m_4312447_se_10_1_20140604.tif", "targetBucket": "korver.us.east.1", "targetPrefix": "test/", "subSample": "50%", "compRate": "85"}
+{
+  "sourceBucket": "aws-naip",
+  "sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212364_sw_10_1_20140623.tif",
+  "targetBucket": "youBucketNameHere",
+  "targetPrefix": "yourPrefixHere"
+}
 ```
 
 Success should result in a new compressed jpeg file located in your target bucket and under you target prefix.
