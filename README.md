@@ -1,4 +1,6 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) 
+If you are new to AWS Lambda a good place to start is [here](
+http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
 
 # lambda-gdal_translate
 
@@ -8,7 +10,7 @@ Generally it allows you run something that you would traditionally run as part o
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. What makes this possible at scale is that your are working with data in [Amazon S3](https://aws.amazon.com/s3). It has been used to process 100s of thousands of files in the aws-naip S3 bucket from their original format into optimized RGB data residing under the prefix /rgb/100pct and /rgb/50pct. You can read more about the USDA's NAIP data, part of the AWS Earth on AWS collection [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda without much more than configuring the AWS Lambda function's memory and timeout settings. What makes this possible at scale is that your are working with data in [Amazon S3](https://aws.amazon.com/s3). You can read more about the USDA's NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Usage
 
@@ -18,9 +20,9 @@ An example command looks like the following:
 aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "temp-000"}' log
 ```
 
-As you can see in the above example, there are no gdal_translate arguments in the Lambda function invocation. That is because those values typically remain static over a batch operation so are provided to the code as environment variables. Command line invocation simply requires source bucket and object key, target bucket and optional prefix. Because you often want to modify the resulting image objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
+As you can see in the above example, there are no gdal_translate arguments in the Lambda function invocation. That is because those values typically remain static over a batch operation so are provided to the script as environment variables. Because you often want to modify the resulting objects key name before you store it back to S3, you can also define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a large group of files in S3 it make sense to work off of list off of list rather than repetively list objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS CLI and awk command.
+In order to process a large group of files in S3 it make sense to work off of a file list rather than repetitively list objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS CLI and awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked [requester-pays](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html).
 
 ```bash
 aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
@@ -30,13 +32,12 @@ Your list should look something like this:
 
 ```bash
 cat mylist
-a/2014/1m/rgbir/42122/m_4212264_se_10_1_20140718.tif
+ca/2014/1m/rgbir/42122/m_4212264_se_10_1_20140718.tif
 ca/2014/1m/rgbir/42122/m_4212264_sw_10_1_20140718.tif
 ca/2014/1m/rgbir/42123/m_4212360_se_10_1_20140622.tif
 ca/2014/1m/rgbir/42123/m_4212360_sw_10_1_20140609.tif
 ...
 ```
-
 You can process all of your source imagery using something like this:
 
 ```bash
@@ -48,7 +49,6 @@ that should result in output that looks like this:
 ```bash
 lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212362_sw_10_1_20140622.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212363_se_10_1_20140622.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212363_sw_10_1_20140622.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ...
 ```
 
@@ -58,11 +58,12 @@ To test what you have, try running one of those lines by prepending the aws comm
 aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212362_sw_10_1_20140622.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-Confirm that you have the expected results in the S3 bucket you are using for ou tput by either using the S3 management console our your favorite S3 client.
-Once satisfied with your results, you can speed up things up (a lot) by using 
+You should see 202 get returned.
+
+Confirm that you have the expected results in your S3 bucket by either using the S3 management console our your favorite S3 client. Once satisfied with your results, you can speed things up (a lot) by using xargs command.
 
 ```bash
-| xargs -n 11 -P 64 aws
+cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"test-whatzz\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
 
 ## Updating your own Amazon Lambda function
