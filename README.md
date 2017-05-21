@@ -20,19 +20,27 @@ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation
 
 As you can see in the above example, there are no gdal_translate arguments in the Lambda function invocation. That is because those values typically remain static over a batch operation so are provided to the code as environment variables. Command line invocation simply requires source bucket and object key, target bucket and optional prefix. Because you often want to modify the resulting image objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a group of files you would build the above example command by cating an existing list of target files.
-Assuming you have list of S3 object keys that look like this:
+In order to process a large group of files in S3 it make sense to work off of list off of list rather than repetively list objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS CLI and awk command.
 
 ```bash
-cat geotifs
-naip/or/2014/1m/rgbir/46123/m_4612363_ne_10_1_20140630.tif
-naip/or/2014/1m/rgbir/46123/m_4612363_nw_10_1_20140710.tif
+aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
+```
+
+Your list should look something like this:
+
+```bash
+cat mylist
+a/2014/1m/rgbir/42122/m_4212264_se_10_1_20140718.tif
+ca/2014/1m/rgbir/42122/m_4212264_sw_10_1_20140718.tif
+ca/2014/1m/rgbir/42123/m_4212360_se_10_1_20140622.tif
+ca/2014/1m/rgbir/42123/m_4212360_sw_10_1_20140609.tif
+
 ```
 
 You can process all of your source imagery using something like this:
 
 ```bash
-cat geotifs | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"srcBucket\": \"korver.us.east.1\",\"srcKey\": \""$0"\", \"targetBucket\": \"korver.us.east.1\", \"targetPrefix\": \"test-20161201-02/50/\", \"subSample\": \"50%\", \"compRate\": \"85\"}\x27 log" }' | xargs -n 11 -P 64 aws
+cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"srcBucket\": \"korver.us.east.1\",\"srcKey\": \""$0"\", \"targetBucket\": \"korver.us.east.1\", \"targetPrefix\": \"test-20161201-02/50/\", \"subSample\": \"50%\", \"compRate\": \"85\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
 
 ## Updating your own Amazon Lambda function
