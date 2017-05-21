@@ -1,5 +1,4 @@
-This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) 
-
+This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo).
 If you are new to AWS Lambda a good place to start is [here](
 http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
 
