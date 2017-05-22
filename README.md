@@ -84,7 +84,7 @@ updating: index.js (deflated 61%)
 Now update your blank Lambda function by uploading the resulting ZIP file like this or optionally use the Management Console.
 
 ```bash
-$ aws lambda update-function-code --function-name gdal_translate --region us-east-1 --zip-file fileb://lambda-gdal_translate.zip
+$ aws lambda update-function-code --function-name lambda-gdal_translate --region us-east-1 --zip-file fileb://lambda-gdal_translate.zip
 ```
 
 ## Usage
@@ -92,7 +92,7 @@ $ aws lambda update-function-code --function-name gdal_translate --region us-eas
 Runnig or invoking lambda-gdal_translate looks like this:
 
 ```bash
-$ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+$ aws lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
 As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation itself. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name before the write operation.
@@ -124,16 +124,16 @@ ri/2014/1m/rgbir/42071/m_4207160_se_19_1_20140718.tif
 You can process all of your source imagery using something like this:
 
 ```bash
-$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"yourBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }'
+$ cat mylist | awk -F"/" '{print "lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"yourBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }'
 ```
 For this to work with your S3 bucket, at minimum you need to change "yourBucketNameHere".
 
 That should result in output that looks like this:
 
 ```bash
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207160_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_se_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207160_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_se_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ...
 ```
 
@@ -142,7 +142,7 @@ lambda invoke --function-name gdal_translate --region us-east-1 --invocation-typ
 To test what you have, try running one of those lines by prepending the aws command like this:
 
 ```bash
-$ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+$ aws lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
 Because you invoked it using the Event type you should see an HTTP 202 get returned like this.
@@ -179,7 +179,7 @@ $ ./gdal-2.2.0/apps/gdalinfo test.tif
 Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
 
 ```bash
-$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
+$ cat mylist | awk -F"/" '{print "lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
 
 
