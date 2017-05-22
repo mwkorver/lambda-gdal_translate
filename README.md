@@ -9,11 +9,11 @@ Generally, it allows you run a batch operation, a single line of which might loo
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda in a highly parallel and serverless way. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/). 
+but from AWS Lambda, in a highly parallel serverless way. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
 
 ## Statically Linked `gdal_translate`
 
-Start an Amazon Linux instance on Amazon EC2. In the EC2 console it should look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands:
+If you compile your own binaries, ensure that they’re either statically linked or built for the matching version of Amazon Linux. To do this, start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands:
 
 ```bash
 $ sudo yum update -y
@@ -40,7 +40,7 @@ Name:      lambda-gdal_translate
 Runtime:   Node.js 4.3  
 ```
 
-Then add the following enviromental variables
+Add the following enviroment variables.
 
 | Key           | Value         | 
 | ------------- |:-------------| 
@@ -58,8 +58,8 @@ Existing Role:   lambda_exec_role
 Expand Advanced settings. These NAIP files are not small.
 
 ```
-Memory (MB):     320
-Timeout:         1 min
+Memory (MB):     384
+Timeout:         30 seconds
 ```
 
 ## Updating your own Amazon Lambda function
