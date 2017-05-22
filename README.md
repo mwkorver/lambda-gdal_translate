@@ -1,5 +1,6 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo to run on AWS Lambda.
 There is an overview on running arbitrary executables on AWS Lambda [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
+### Note this script does not use /vsis3/ to allow gdal_translate to read S3 directly. Rather it is generic so that it should be useful for other executables.
 
 # lambda-gdal_translate
 
@@ -136,6 +137,8 @@ lambda invoke --function-name gdal_translate --region us-east-1 --invocation-typ
 ...
 ```
 
+## Test
+
 To test what you have, try running one of those lines by prepending the aws command like this:
 
 ```bash
@@ -150,16 +153,7 @@ Because you invoked it using the Event type you should see an HTTP 202 get retur
 }
 ```
 
-Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
-
-```bash
-$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
-```
-
-
-## Test
-
-Once you have updated the Lambda function by uploading the zip file, which includes the gdal_translate binary, you can run a test either via CLI, or from the console. As in the example command line above, in order to run test it, you will need to provide the function a json formatted test event.
+You can run a test either via CLI, or from the Amazon Managemet Console. As in the example command line above, in order to run test it, you will need to provide the function a json formatted test event.
 
 ```bash
 {
@@ -169,4 +163,17 @@ Once you have updated the Lambda function by uploading the zip file, which inclu
   "targetPrefix": "yourPrefixHere"
 }
 ```
+
+Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. 
+
+## Pleasingly Parallel
+
+Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
+
+```bash
+$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
+```
+
+
+
 
