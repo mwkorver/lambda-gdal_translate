@@ -15,8 +15,6 @@ but from AWS Lambda in a highly parallel, serverless way. Lambda makes it easy t
 
 ## Statically Linked `gdal_translate`
 
-
-
 First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands:
 
 ```bash
@@ -38,8 +36,14 @@ gdal_translate binary will be under ~/gdal-2.2.0/apps with other gdal utility pr
 You can create your new Lambda function from the commandline, but because we also need to add a few environment variables it is easier to use the console to do the typing.
 Go to the console. Create a blank node.js 4.3 function.
 Choose an existing Role : lambda_exec_role
-
 Click on Advanced settings. This depends on the details of your data, but for the NAIP data (180MB per geotiff) you will want 320MB and timeout of about 30 seconds.
+add the following enviromental variables
+
+```bash
+gdalArgs -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512 -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY=85
+findVal rgbir
+replaceVal rgb/50pct
+```
 
 ## Updating your own Amazon Lambda function
 
