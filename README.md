@@ -84,7 +84,7 @@ updating: index.js (deflated 61%)
 Now update your blank Lambda function by uploading the resulting ZIP file like this or optionally use the Management Console.
 
 ```bash
-$ aws lambda update-function-code --function-name gdal_translate --zip-file fileb://lambda-gdal_translate.zip
+$ aws lambda update-function-code --function-name gdal_translate --region us-east-1 --zip-file fileb://lambda-gdal_translate.zip
 ```
 
 ## Usage
