@@ -5,7 +5,7 @@ Also, there is an overview about running arbitrary executables [here](https://aw
 
 # lambda-gdal_translate
 
-This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
+This project allows you to run the [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
 Generally, it allows you run a batch operation, one line of which might look like this,
 
 ```bash
@@ -17,7 +17,7 @@ but from AWS Lambda in a highly parallel, serverless way. Lambda makes it easy t
 
 You can use the gdal_translate binary under /bin. However if you want a more recent version you will need to build a statically linked one on an Amazon Linux instance for it work on AWS Lambda.
 
-First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  SSH to the instance and run the following commands:
+First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands:
 
 ```bash
 $ sudo yum update -y
@@ -32,6 +32,13 @@ $ make install
 $ rm -rf /tmp/gdal
 ```
 gdal_translate binary will be under ~/gdal-2.2.0/apps with other gdal utility programs. Copy it to lamba-gdal_translate/bin/ location that you have git cloned.
+
+## Setting up your blank Amazon Lambda function
+
+Go to the console. Create a blank node.js 4.3 function.
+Choose an existing Role : lambda_exec_role
+
+Click on Advanced settings. This depends on the details of your data, but for the NAIP data (180MB per geotiff) you will want 320MB and timeout of about 30 seconds.
 
 ## Updating your own Amazon Lambda function
 
@@ -58,6 +65,10 @@ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation
 ```
 
 As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
+
+```bash
+aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+```
 
 In order to process a large group of files in S3 it makes sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
 
