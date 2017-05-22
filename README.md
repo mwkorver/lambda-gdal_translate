@@ -1,16 +1,17 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo).
 If you are new to AWS Lambda a good place to start is [here](
 http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
+An overview about running arbitrary exectables is [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
 
 # lambda-gdal_translate
 
 This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
-Generally it allows you run a batch operation, one line of which might look like this,
+Generally, it allows you run a batch operation, one line of which might look like this,
 
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda in a highly parallel, serverless way. What makes this possible at scale is that you are working with data in [Amazon S3](https://aws.amazon.com/s3), rather than data in a traditional file system. This example uses the USDA's NAIP data set. You can read more about the NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda in a highly parallel, serverless way. What makes this possible at scale is that the Lambda function is working with data in [Amazon S3](https://aws.amazon.com/s3), serverless object storage, rather than data in a traditional file system. This example uses the USDA's NAIP data set. The NAIP data is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Statically Linked `gdal_translate`
 
