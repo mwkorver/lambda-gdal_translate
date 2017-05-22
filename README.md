@@ -5,16 +5,16 @@ http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
 # lambda-gdal_translate
 
 This project allows you to run [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
-Generally it allows you run something that you would traditionally run as part of a batch file like this:
+Generally it allows you run a batch operation, one line of which might look like this,
 
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-But from AWS Lambda. The difference you can do so in a highly parallel way, without much more than configuring the Lambda function's memory and timeout settings. What makes this possible at scale is that you are working with data in [Amazon S3](https://aws.amazon.com/s3), rather than a traditional file system. This example uses the USDA's NAIP data set. You can read more about the NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda in a highly parallel, serverless way. What makes this possible at scale is that you are working with data in [Amazon S3](https://aws.amazon.com/s3), rather than data in a traditional file system. This example uses the USDA's NAIP data set. You can read more about the NAIP data, which is available as part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Statically Linked `gdal_translate`
 
-You should be able to use the gdal_translate binary under /bin. However if you want a more recent version you need build a statically linked one on an Amazon Linux instance for it run on AWS Lambda.
+You can use the gdal_translate binary under /bin. However if you want a more recent version you need to build a statically linked one on an Amazon Linux instance for it run on AWS Lambda.
 
 First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  SSH to the instance and run the following commands:
 
@@ -33,15 +33,15 @@ $ rm -rf /tmp/gdal
 
 ## Usage
 
-Runnig Lambda-gdal_translate looks like this:
+Runnig or invoking Lambda-gdal_translate looks like this:
 
 ```bash
-aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "temp-000"}' log
+aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-As you can see in this example, there are no gdal_translate arguments in the function invocation. That is because those arguments remain static over the course of a batch operation so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
+As you can see in this example, you are providing the Lambda function information about where to get data and how to write the data, there are no gdal_translate arguments in the function invocation. That is because those arguments remain static over the course of a batch operation so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a large group of files in S3 it make sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked [requester-pays](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). You would not need it for your own data in S3.
+In order to process a large group of files in S3 it makes sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
 
 ```bash
 aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
@@ -78,7 +78,7 @@ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation
 
 Because you invoked it using the Event type you should see a HTTP 202 get returned.
 
-Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your S3 bucket. Once satisfied with your results, you can speed things up (a lot) by piping to the xargs command like below.
+Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
 
 ```bash
 cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
