@@ -3,7 +3,7 @@ There is an overview on running arbitrary executables on AWS Lambda [here](https
 
 # lambda-gdal_translate
 
-This project allows you to run the [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
+This script allows you to run the [gdal_translate](http://www.gdal.org/gdal_translate.html) utility using the [AWS Lambda](https://aws.amazon.com/lambda/) execution environment.
 Generally, it allows you run a batch operation, a single line of which might look like this,
 
 ```bash
@@ -13,13 +13,15 @@ but using AWS Lambda, in a serverless way. The general idea is that running on L
 
 ## Getting Started
 
-Start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3.
+Start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda, read from S3 and write to at least one of your own S3 buckets. SSH to that instance and clone this repository.
 
-
+```bash
+$ git clone https://github.com/mwkorver/lambda-gdal_translate.git
+```
 
 ## Statically Linked `gdal_translate`
 
-To run exectables on Lambda it needs to be compiled in way such that it will run in a stand-alone fashion or built for the matching version of Amazon Linux. To do this, start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands to build GDAL:
+This repository already includes the gdal_translate binary. Let's assume you want a more recent version. To run exectables on Lambda it needs to be compiled in way such that it will run in a stand-alone fashion or built for the matching version of Amazon Linux. GDAL downloads are [here](https://trac.osgeo.org/gdal/wiki/DownloadSource).
 
 ```bash
 $ sudo yum update -y
@@ -50,9 +52,9 @@ Add the following enviroment variables.
 
 | Key           | Value         | 
 | ------------- |:-------------| 
-| gdalArgs      |  -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512 -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY=85 |
+| gdalArgs      |  -b 1 -b 2 -b 3 -of GTiff -outsize 25% 25% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512 -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY=85 |
 | findVal       | rgbir      | 
-| replaceVal    | rgb/50pct      | 
+| replaceVal    | rgb/25pct      | 
 
 Under the "Lambda function handler and role" section.
 
@@ -70,7 +72,7 @@ Timeout:         30 seconds
 
 ## Updating your own Amazon Lambda function
 
-If you overwrote the gdal_translate binary you need to create a new deployment file package:
+If you overwrote the gdal_translate binary under /bin, you need to create a new deployment file package:
 
 ```bash
 $ zip -r -9 lambda-gdal_translate bin index.js
@@ -78,7 +80,7 @@ updating: bin/ (stored 0%)
 updating: bin/gdal_translate (deflated 69%)
 updating: index.js (deflated 61%)
 ```
-Now upload the resulting ZIP file to Amazon Lambda like this or optionally use the Management Console.
+Now update your blank Lambda function by uploading the resulting ZIP file like this or optionally use the Management Console.
 
 ```bash
 $ aws lambda update-function-code --function-name gdal_translate --zip-file fileb://lambda-gdal_translate.zip
@@ -89,25 +91,33 @@ $ aws lambda update-function-code --function-name gdal_translate --zip-file file
 Runnig or invoking lambda-gdal_translate looks like this:
 
 ```bash
-aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+$ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
+As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation itself. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name before the write operation.
 
+In order to process a large group of files in S3 it makes sense to work off of a list of S3 objects rather than repetitively listing objeccts in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is setup that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
 
-In order to process a large group of files in S3 it makes sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
+Try this with Rhode Island (ri) data.
 
 ```bash
-aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
+$ aws s3 ls --recursive --request-payer requester s3://aws-naip/ri/2014/1m/rgbir 
+$ aws s3 ls --recursive --request-payer requester s3://aws-naip/ri/2014/1m/rgbir | awk -F" " '{print $4}' 
+```
+Then run this to create a list.
+
+```bash
+$ aws s3 ls --recursive --request-payer requester s3://aws-naip/ri/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
 ```
 Your resulting list should look something like this:
 
 ```bash
 cat mylist
-ca/2014/1m/rgbir/42122/m_4212264_se_10_1_20140718.tif
-ca/2014/1m/rgbir/42122/m_4212264_sw_10_1_20140718.tif
-ca/2014/1m/rgbir/42123/m_4212360_se_10_1_20140622.tif
-ca/2014/1m/rgbir/42123/m_4212360_sw_10_1_20140609.tif
+ri/2014/1m/rgbir/41071/m_4107152_sw_19_1_20140718.tif
+ri/2014/1m/rgbir/42071/m_4207158_se_19_1_20140712.tif
+ri/2014/1m/rgbir/42071/m_4207159_se_19_1_20140718.tif
+ri/2014/1m/rgbir/42071/m_4207159_sw_19_1_20140718.tif
+ri/2014/1m/rgbir/42071/m_4207160_se_19_1_20140718.tif
 ...
 ```
 You can process all of your source imagery using something like this:
@@ -115,22 +125,30 @@ You can process all of your source imagery using something like this:
 ```bash
 cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"yourBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }'
 ```
+For this to work with your S3 bucket, at minimum you need to change "yourBucketNameHere".
 
-that should result in output that looks like this:
+That should result in output that looks like this:
 
 ```bash
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212362_sw_10_1_20140622.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
-lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212363_se_10_1_20140622.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207160_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_se_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ...
 ```
 
 To test what you have, try running one of those lines by prepending the aws command like this:
 
 ```bash
-aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212362_sw_10_1_20140622.tif", "targetBucket": "youBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-Because you invoked it using the Event type you should see a HTTP 202 get returned.
+Because you invoked it using the Event type you should see an HTTP 202 get returned like this.
+
+```bash
+{
+    "StatusCode": 202
+}
+```
 
 Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
 
