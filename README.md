@@ -1,7 +1,7 @@
-This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo).
-If you are new to AWS Lambda a good place to start is [here](
+This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo using js to run on AWS Lambda.
+If you are new to AWS Lambda, a good place to start is [here](
 http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
-An overview about running arbitrary executables is [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
+Also, there is an overview about running arbitrary executables [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
 
 # lambda-gdal_translate
 
@@ -11,7 +11,7 @@ Generally, it allows you run a batch operation, one line of which might look lik
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda in a highly parallel, serverless way. What makes working with large amounts of data in parallel possible is that the Lambda function is working with data in [Amazon S3](https://aws.amazon.com/s3), serverless object storage, rather than data in a traditional file system. This example uses the USDA's NAIP data set in the bucket aws-naip. The NAIP data is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda in a highly parallel, serverless way. Lambda makes it easy to access large amounts compute, but this script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), serverless object storage, rather than data in a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA's NAIP data set in the bucket aws-naip. The NAIP data is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Statically Linked `gdal_translate`
 
