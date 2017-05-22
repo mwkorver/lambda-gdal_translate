@@ -159,12 +159,20 @@ You can run a test either via CLI, or from the Amazon Managemet Console. As in t
 {
   "sourceBucket": "aws-naip",
   "sourceObjectKey": "ca/2014/1m/rgbir/42123/m_4212364_sw_10_1_20140623.tif",
-  "targetBucket": "youBucketNameHere",
+  "targetBucket": "yourBucketNameHere",
   "targetPrefix": "yourPrefixHere"
 }
 ```
 
 Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. 
+
+You can check on your result by using gdalinfo
+
+```bash
+$ aws s3 ls --recursive --request-payer requester s3://yourBucketNameHere/yourPrefixHere
+$ aws s3 cp s3://yourBucketNameHere/yourPrefixHere/ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif test.tif
+$ ./gdal-2.2.0/apps/gdalinfo test.tif
+```
 
 ## Pleasingly Parallel
 
