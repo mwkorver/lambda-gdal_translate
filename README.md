@@ -1,6 +1,6 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo using js to run on AWS Lambda.
 If you are new to AWS Lambda, a good place to start is [here](
-http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
+http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html).
 Also, there is an overview about running arbitrary executables [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
 
 # lambda-gdal_translate
