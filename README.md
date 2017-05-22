@@ -37,7 +37,7 @@ $ rm -rf /tmp/gdal
 ```
 Once this done, you can find the gdal_translate binary under ~/gdal-2.2.0/apps along with other gdal utility programs. Copy it to lamba-gdal_translate/bin/ location replacing the one there.
 
-## Setup a blank Amazon Lambda function
+## Setup a blank AWS Lambda function
 
 You can create your new Lambda function from the commandline, but because we also need to add a few environment variables it's easier to use the console to get this started.
 Go to the console. Create a function, choose 'Blank Function', don't configure a trigger.
@@ -70,7 +70,7 @@ Memory (MB):     384
 Timeout:         30 seconds
 ```
 
-## Updating your own Amazon Lambda function
+## Updating your own AWS Lambda function
 
 If you overwrote the gdal_translate binary under /bin, you need to create a new deployment file package:
 
@@ -112,7 +112,7 @@ $ aws s3 ls --recursive --request-payer requester s3://aws-naip/ri/2014/1m/rgbir
 Your resulting list should look something like this:
 
 ```bash
-cat mylist
+$ cat mylist
 ri/2014/1m/rgbir/41071/m_4107152_sw_19_1_20140718.tif
 ri/2014/1m/rgbir/42071/m_4207158_se_19_1_20140712.tif
 ri/2014/1m/rgbir/42071/m_4207159_se_19_1_20140718.tif
@@ -123,7 +123,7 @@ ri/2014/1m/rgbir/42071/m_4207160_se_19_1_20140718.tif
 You can process all of your source imagery using something like this:
 
 ```bash
-cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"yourBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }'
+$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"yourBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }'
 ```
 For this to work with your S3 bucket, at minimum you need to change "yourBucketNameHere".
 
@@ -139,7 +139,7 @@ lambda invoke --function-name gdal_translate --region us-east-1 --invocation-typ
 To test what you have, try running one of those lines by prepending the aws command like this:
 
 ```bash
-aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
+$ aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip","sourceObjectKey": "ri/2014/1m/rgbir/42071/m_4207161_sw_19_1_20140718.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
 Because you invoked it using the Event type you should see an HTTP 202 get returned like this.
@@ -153,7 +153,7 @@ Because you invoked it using the Event type you should see an HTTP 202 get retur
 Depending on the size of the raster file it will take a few seconds to process, but confirm that you have the expected result in your target S3 bucket. Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
 
 ```bash
-cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
+$ cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
 
 
@@ -169,6 +169,4 @@ Once you have updated the Lambda function by uploading the zip file, which inclu
   "targetPrefix": "yourPrefixHere"
 }
 ```
-
-Success should result in a new compressed jpeg file located in your target bucket and under you target prefix.
 
