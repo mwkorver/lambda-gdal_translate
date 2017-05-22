@@ -1,4 +1,4 @@
-This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo using js to run on AWS Lambda.
+This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo to run on AWS Lambda.
 There is an overview on running arbitrary executables on AWS Lambda [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
 
 # lambda-gdal_translate
@@ -9,11 +9,17 @@ Generally, it allows you run a batch operation, a single line of which might loo
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda, in a highly parallel serverless way. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
+but using AWS Lambda, in a serverless way. The general idea is that running on Lambda allows what would typically run on a constrained number of workstation cores, run as many execution threads close to your data. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, which is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
+
+## Getting Started
+
+Start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3.
+
+
 
 ## Statically Linked `gdal_translate`
 
-If you compile your own binaries, ensure that they’re either statically linked or built for the matching version of Amazon Linux. To do this, start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands:
+To run exectables on Lambda it needs to be compiled in way such that it will run in a stand-alone fashion or built for the matching version of Amazon Linux. To do this, start an Amazon Linux instance on Amazon EC2. Make sure you start the EC2 instance with an IAM role that will allow you to work with Lambda and S3. SSH to that instance and run the following commands to build GDAL:
 
 ```bash
 $ sudo yum update -y
@@ -27,7 +33,7 @@ $ make
 $ make install
 $ rm -rf /tmp/gdal
 ```
-You can find the gdal_translate binary under ~/gdal-2.2.0/apps along with other gdal utility programs. Copy it to lamba-gdal_translate/bin/ location replacing the one there.
+Once this done, you can find the gdal_translate binary under ~/gdal-2.2.0/apps along with other gdal utility programs. Copy it to lamba-gdal_translate/bin/ location replacing the one there.
 
 ## Setup a blank Amazon Lambda function
 
