@@ -1,7 +1,7 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo).
 If you are new to AWS Lambda a good place to start is [here](
 http://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
-An overview about running arbitrary exectables is [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
+An overview about running arbitrary executables is [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
 
 # lambda-gdal_translate
 
@@ -11,11 +11,11 @@ Generally, it allows you run a batch operation, one line of which might look lik
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but from AWS Lambda in a highly parallel, serverless way. What makes this possible at scale is that the Lambda function is working with data in [Amazon S3](https://aws.amazon.com/s3), serverless object storage, rather than data in a traditional file system. This example uses the USDA's NAIP data set. The NAIP data is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
+but from AWS Lambda in a highly parallel, serverless way. What makes working with large amounts of data in parallel possible is that the Lambda function is working with data in [Amazon S3](https://aws.amazon.com/s3), serverless object storage, rather than data in a traditional file system. This example uses the USDA's NAIP data set in the bucket aws-naip. The NAIP data is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/public-datasets/naip/).
 
 ## Statically Linked `gdal_translate`
 
-You can use the gdal_translate binary under /bin. However if you want a more recent version you need to build a statically linked one on an Amazon Linux instance for it run on AWS Lambda.
+You can use the gdal_translate binary under /bin. However if you want a more recent version you will need to build a statically linked one on an Amazon Linux instance for it work on AWS Lambda.
 
 First, spin up an Amazon Linux instance on Amazon EC2. In the EC2 console it will look like "Amazon Linux AMI 2017.03.0 (HVM), SSD Volume".  SSH to the instance and run the following commands:
 
@@ -31,18 +31,35 @@ $ make
 $ make install
 $ rm -rf /tmp/gdal
 ```
+gdal_translate binary will be under ~/gdal-2.2.0/apps with other gdal utility programs. Copy it to lamba-gdal_translate/bin/ location that you have git cloned.
+
+## Updating your own Amazon Lambda function
+
+Now that you have new binary you need to create a new deployment zip file package:
+
+```bash
+$ zip -r -9 lambda-gdal_translate bin index.js
+updating: bin/ (stored 0%)
+updating: bin/gdal_translate (deflated 69%)
+updating: index.js (deflated 61%)
+```
+Now upload the resulting ZIP file to Amazon Lambda like this or optionally use the Management Console.
+
+```bash
+$ aws lambda update-function-code --function-name gdal_translate --zip-file fileb://lambda-gdal_translate.zip
+```
 
 ## Usage
 
-Runnig or invoking Lambda-gdal_translate looks like this:
+Runnig or invoking lambda-gdal_translate looks like this:
 
 ```bash
 aws lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-As you can see in this example, you are providing the Lambda function information about where to get data and how to write the data, there are no gdal_translate arguments in the function invocation. That is because those arguments remain static over the course of a batch operation so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
+As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name.
 
-In order to process a large group of files in S3 it makes sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket, aws-naip, includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
+In order to process a large group of files in S3 it makes sense to work off of a file list rather than repetitively listing objeccts in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is marked that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
 
 ```bash
 aws s3 ls --recursive --request-payer requester s3://aws-naip/ca/2014/1m/rgbir | awk -F" " '{print $4}' > mylist
@@ -85,26 +102,6 @@ Depending on the size of the raster file it will take a few seconds to process, 
 cat mylist | awk -F"/" '{print "lambda invoke --function-name gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
 
-## Updating your own Amazon Lambda function
-
-Make the changes you want to the file `index.js` and then package everything into a ZIP file:
-
-```bash
-$ zip -r -9 lambda-gdal_translate bin index.js
-updating: bin/ (stored 0%)
-updating: bin/gdal_translate (deflated 69%)
-updating: index.js (deflated 61%)
-```
-
-From there you can upload the resulting ZIP file to Amazon Lambda via the console, or CLI:
-
-```bash
-$ aws lambda update-function-code --function-name gdal_translate --zip-file fileb://lambda-gdal_translate.zip
-```
-
-Then test it by using something like the single object example listed above.
-
-Next, get a copy of the `gdal_translate` binary to your /bin directory. It is easiest to do this on the same EC2 instance you are testing the AWS Lambda function.
 
 ## Test
 
