@@ -10,7 +10,7 @@ Generally, it allows you run a batch operation, a single line of which might loo
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but using AWS Lambda, in a serverless way. The general idea is that running on Lambda allows what would typically run on a constrained number of workstation cores, run as many execution threads close to your data. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, which is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
+but using AWS Lambda, in a serverless way. The general idea is that using AWS Lambda allows what would typically run on a constrained number of workstation cores, to run as many execution threads on compute that sits close to your data. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, which is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
 
 ## Getting Started
 
