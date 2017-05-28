@@ -174,9 +174,9 @@ $ aws s3 cp s3://yourBucketNameHere/yourPrefixHere/ri/2014/1m/rgbir/42071/m_4207
 $ ./gdal-2.2.0/apps/gdalinfo test.tif
 ```
 
-## Pleasingly Parallel
+## Pleasingly Parallel (CLI in combo with serverless compute and storage)
 
-Once satisfied with your results, you can speed things up by piping to  xargs and running in parallel mode using -P nn.
+Once satisfied with your results, you can speed things up by piping to xargs and running in parallel using -P nn option.
 
 ```bash
 $ cat mylist | awk -F"/" '{print "lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
