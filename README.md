@@ -1,6 +1,6 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo to run on AWS Lambda.
 There is an overview on running arbitrary executables on AWS Lambda [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
-### Note this script does not use /vsis3/ to allow gdal_translate to read S3 directly. Rather it is generic so that it should be useful for other executables.
+### Note this script does not use /vsis3/ to allow gdal_translate to read S3 directly. Rather it is kept generic so that it should be useful for other executables that don't have this capability.
 
 # lambda-gdal_translate
 
