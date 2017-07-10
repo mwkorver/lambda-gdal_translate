@@ -1,6 +1,5 @@
 This is based on Hector Castro's [lambda-gdalinfo](https://github.com/hectcastro/lambda-gdalinfo) where he shows how to wrap gdalinfo to run on AWS Lambda.
 There is an overview on running arbitrary executables on AWS Lambda [here](https://aws.amazon.com/blogs/compute/running-executables-in-aws-lambda/).
-### Note this script does not use /vsis3/ to allow gdal_translate to read S3 directly. Rather it is kept generic so that it should be useful for other executables that don't have this capability.
 
 # lambda-gdal_translate
 
@@ -181,6 +180,7 @@ Once satisfied with your results, you can speed things up by piping to xargs and
 ```bash
 $ cat mylist | awk -F"/" '{print "lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload \x27{\"sourceBucket\": \"aws-naip\",\"sourceObjectKey\": \""$0"\", \"targetBucket\": \"youBucketNameHere\", \"targetPrefix\": \"yourPrefixHere\"}\x27 log" }' | xargs -n 11 -P 64 aws
 ```
+
 
 
 
