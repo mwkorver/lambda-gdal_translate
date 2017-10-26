@@ -2,5 +2,5 @@ test
 *.zip
 *.tif
 *.vrt
-set_AWS_env_vars
+*.orig
 node_modules
