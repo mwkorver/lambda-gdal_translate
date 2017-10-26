@@ -1,6 +1,4 @@
 { 
 "sourceBucket": "aws-naip", 
-"sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", 
-"targetBucket": "korver.us.east.1", 
-"targetPrefix": "temp-000"
+"sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif" 
 }

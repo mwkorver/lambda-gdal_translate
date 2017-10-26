@@ -24,22 +24,9 @@ exports.handler = (event, context, callback) => {
     console.log('Source Key: ' + event.sourceObjectKey);
     console.log('Target Bucket: ' + process.env.targetBucket);
     console.log('Target Prefix: ' + process.env.targetPrefix); 
-    if(event.otherKeyID && event.otherSecretKey) {
-    	console.log('Other Key ID: ' + process.env.otherKeyID);
-    	console.log('Other Secrect Key: ' + process.env.otherSecretKey);
-    	var accessKeys = 'env AWS_ACCESS_KEY_ID=' + process.env.otherKeyID
-        + ' AWS_SECRET_ACCESS_KEY=' + process.env.otherSecretKey;
-    } else {
-    	console.log('Role Key ID: ' + process.env.AWS_ACCESS_KEY_ID);
-    	console.log('Role Secret Key: ' + process.env.AWS_SECRET_ACCESS_KEY);
-	var accessKeys = 'env AWS_ACCESS_KEY_ID=' + process.env.AWS_ACCESS_KEY_ID
-        + ' AWS_SECRET_ACCESS_KEY=' + process.env.AWS_SECRET_ACCESS_KEY
-        + ' AWS_SESSION_TOKEN=' + process.env.AWS_SESSION_TOKEN;
-    }
 
     // the AWS access keys will not be neccessary in gdal ver 2.3 due to IAM Role support
-    const cmd = accessKeys
-        + ' AWS_REQUEST_PAYER=requester'
+    const cmd = 'AWS_REQUEST_PAYER=requester'
         + ' GDAL_DISABLE_READDIR_ON_OPEN=YES CPL_VSIL_CURL_ALLOWED_EXTENSIONS=.tif ./bin/gdal_translate '
         + process.env.gdalArgs 
         + ' /vsis3/' + event.sourceBucket + '/' + event.sourceObjectKey + ' /tmp/output.tif';
