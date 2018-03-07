@@ -29,7 +29,7 @@ $ sudo yum groupinstall -y "Development Tools"
 $ sudo yum install -y libcurl-devel
 $ wget http://download.osgeo.org/gdal/2.2.3/gdal-2.2.3.tar.gz | sudo tar zxf -
 $ cd gdal-2.2.3
-$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --prefix /tmp/gdal
+$ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --without-ecw --prefix /tmp/gdal
 $ make
 $ make install
 $ rm -rf /tmp/gdal
