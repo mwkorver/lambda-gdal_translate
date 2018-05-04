@@ -27,8 +27,8 @@ This repository already includes the gdal_translate binary. Let's assume you wan
 $ sudo yum update -y
 $ sudo yum groupinstall -y "Development Tools"
 $ sudo yum install -y libcurl-devel
-$ wget http://download.osgeo.org/gdal/2.2.3/gdal-2.2.3.tar.gz | sudo tar zxf -
-$ cd gdal-2.2.3
+$ wget http://download.osgeo.org/gdal/2.3.0/gdal-2.2.3.tar.gz | sudo tar zxf -
+$ cd gdal-2.3.0
 $ ./configure --without-ld-shared --disable-shared --enable-static --with-curl --without-ecw --prefix /tmp/gdal
 $ make
 $ make install
