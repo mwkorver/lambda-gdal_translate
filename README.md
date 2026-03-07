@@ -9,7 +9,7 @@ Generally, it allows you run a batch operation, a single line of which might loo
 ```bash
 gdal_translate -b 1 -b 2 -b 3 -of GTiff -outsize 50% 50% -co tiled=yes -co BLOCKXSIZE=512 -co BLOCKYSIZE=512' -co PHOTOMETRIC=YCBCR -co COMPRESS=JPEG -co JPEG_QUALITY='85' input.tif output.tif
 ```
-but using AWS Lambda, in a serverless way. The general idea is that using AWS Lambda allows what would typically run on a constrained number of workstation cores, to run as many execution threads on compute that sits close to your data. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, which is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
+but using AWS Lambda, a serverless environment. The general idea is that using AWS Lambda allows what would typically run on a constrained number of workstation cores, to run as many execution threads on compute that sits close to your data. Lambda makes it easy to access large amounts compute, but compute alone is not enough. This script works in conjunction with [Amazon Simple Storage Service](https://aws.amazon.com/s3) (S3), rather than a traditional file system, to make big geo-data processing accessible to anybody. This example uses the USDA NAIP data set, which is part of the AWS Earth on AWS collection, [here](https://aws.amazon.com/earth/). 
 
 ## Getting Started
 
@@ -21,7 +21,7 @@ $ git clone https://github.com/mwkorver/lambda-gdal_translate.git
 
 ## Statically Linked `gdal_translate`
 
-This repository already includes the gdal_translate binary. Let's assume you want a more recent version. To run exectables on Lambda it needs to be compiled in way such that it will run in a stand-alone fashion or built for the matching version of Amazon Linux. GDAL downloads are [here](https://trac.osgeo.org/gdal/wiki/DownloadSource).
+This repository already includes the gdal_translate binary. Let's assume you want a more recent version. To run executables on Lambda it needs to be compiled in way such that it will run in a stand-alone fashion or built for the matching version of Amazon Linux. GDAL downloads are [here](https://trac.osgeo.org/gdal/wiki/DownloadSource).
 
 ```bash
 $ sudo yum update -y
@@ -93,9 +93,9 @@ Runnig or invoking lambda-gdal_translate looks like this:
 $ aws lambda invoke --function-name lambda-gdal_translate --region us-east-1 --invocation-type Event --payload '{"sourceBucket": "aws-naip", "sourceObjectKey": "wi/2015/1m/rgbir/47090/m_4709061_sw_15_1_20150914.tif", "targetBucket": "yourBucketNameHere", "targetPrefix": "yourPrefixHere"}' log
 ```
 
-As you can see in this example, you are providing the Lambda function information about where to get data and where to write the result data, there are no gdal_translate arguments in the function invocation itself. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name before the write operation.
+As you can see in this example, you are providing the Lambda function information about where to get the data and where to write the result, there are no gdal_translate arguments in the function invocation itself. That is because those values remain static over the course of a batch operation, so are provided to the script as environment variables. In addition, because you often want to modify the output objects key name before you store it back to S3, you can define a find/replace string pair as environment variables to modify the output key name before the write operation.
 
-In order to process a large group of files in S3 it makes sense to work off of a list of S3 objects rather than repetitively listing objeccts in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is setup that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
+In order to process a large group of files in S3 it makes sense to work off of a list of S3 objects rather than repetitively listing objects in S3. The NAIP bucket includes a manifest file at root, but lets assume you want to build your own list. You can do this by using the AWS S3 CLI and the awk command. Note, this example uses "--request-payer requester" because the NAIP data is provided in a bucket that is setup that way. You can read more about requester-pays [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/RequesterPaysBuckets.html). 
 
 Try this with Rhode Island (ri) data.
 
